@@ -1,0 +1,34 @@
+name: Deploy to EC2
+on:
+  push:
+    branches:
+      - main
+jobs:
+  deploy:
+  # Github actions runs the job on the latest ubuntu version
+    runs-on: ubuntu-latest
+
+    steps:
+    # Pulls out the latest code
+      - name: Checkout the code
+        uses: actions/checkout@v3
+    # Ensures that SSH is installed on the runner so it can ssh to the instance
+      - name: Install SSH client
+        run: sudo apt-get install openssh-client -y
+
+      - name: Add SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" | base64 --decode > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          eval $(ssh-agent -s)
+          ssh-add ~/.ssh/deploy_key
+          # Add the server to known_hosts to avoid confirmation prompt
+          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Deploy application to EC2
+        run: |
+          ssh ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
+          cd ${{ secrets.EC2_APP_PATH }}
+          git pull origin main
+          EOF
