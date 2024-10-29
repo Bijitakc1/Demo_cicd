@@ -19,16 +19,18 @@ jobs:
       - name: Add SSH key
         run: |
           mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_PRIVATE_KEY }}"  | base64 --decode > ~/.ssh/deploy_key.pem
+          echo "${{secrets.SSH_PRIVATE_KEY}}"  | base64 --decode > ~/.ssh/deploy_key.pem
           chmod 600 ~/.ssh/deploy_key.pem
           eval $(ssh-agent -s)
           ssh-add ~/.ssh/deploy_key.pem
           # Add the server to known_hosts to avoid confirmation prompt
-          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+          ssh-keyscan -H ${{secrets.EC2_HOST}} >> ~/.ssh/known_hosts
+      - name: Verify SSH key
+        run: ssh-add -l
 
       - name: Deploy application to EC2
         run: |
-          ssh -v ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
-          cd ${{ secrets.EC2_APP_PATH }}
+          ssh -i ~/.ssh/deploy_key.pem -v ${{secrets.EC2_USER}}@${{secrets.EC2_HOST}} << 'EOF'
+          cd ${{secrets.EC2_APP_PATH}}
           git pull origin main
           EOF
