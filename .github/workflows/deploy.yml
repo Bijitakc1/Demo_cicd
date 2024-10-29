@@ -19,7 +19,7 @@ jobs:
       - name: Add SSH key
         run: |
           mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key.pem
+          echo "${{ secrets.SSH_PRIVATE_KEY }}"  | base64 --decode > ~/.ssh/deploy_key.pem
           chmod 600 ~/.ssh/deploy_key.pem
           eval $(ssh-agent -s)
           ssh-add ~/.ssh/deploy_key.pem
