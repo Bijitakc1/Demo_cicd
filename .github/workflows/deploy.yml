@@ -34,7 +34,7 @@ jobs:
       # Allow inbound access to the security group
       - name: Allow inbound access to security group
         run: |
-          aws ec2 authorize-security-group-ingress --group-id sg-01b37497868ba0a7e \
+          aws ec2 authorize-security-group-ingress --group-id ${{ secrets.SG_ID }} \
             --protocol tcp --port 22 --cidr $(curl -s https://checkip.amazonaws.com)/32 || true
 
       - name: Add SSH key
@@ -60,7 +60,7 @@ jobs:
         run: |
           echo "Revoking temporary access from the security group..."
           aws ec2 revoke-security-group-ingress \
-            --group-id sg-0abcd1234efgh5678 \
+            --group-id ${{ secrets.SG_ID }} \
             --protocol tcp \
             --port 22 \
             --cidr ${IP}/32 || true
