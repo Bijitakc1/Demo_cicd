@@ -12,9 +12,30 @@ jobs:
     # Pulls out the latest code
       - name: Checkout the code
         uses: actions/checkout@v3
+        
     # Ensures that SSH is installed on the runner so it can ssh to the instance
       - name: Install SSH client
         run: sudo apt-get update -y && sudo apt-get install openssh-client -y
+
+      # Log the runner's public IP address
+      - name: Get Runner Public IP Address
+        run: |
+          echo "Fetching the runner's public IP address..."
+          IP=$(curl -s https://checkip.amazonaws.com)
+          echo "Public IP Address of the Runner: $IP"
+
+      # Configure AWS CLI credentials
+      - name: Configure AWS CLI
+        run: |
+          aws configure set aws_access_key_id ${{ secrets.AWS_CLI_ACCESS_KEY_ID }}
+          aws configure set aws_secret_access_key ${{ secrets.AWS_CLI_SECRET_ACCESS_KEY }}
+          aws configure set default.region us-east-2
+
+      # Allow inbound access to the security group
+      - name: Allow inbound access to security group
+        run: |
+          aws ec2 authorize-security-group-ingress --group-id sg-01b37497868ba0a7e \
+            --protocol tcp --port 22 --cidr $(curl -s https://checkip.amazonaws.com)/32 || true
 
       - name: Add SSH key
         run: |
@@ -33,3 +54,15 @@ jobs:
           cd ${{secrets.EC2_APP_PATH}}
           git pull origin main
           EOF
+          
+      # Revoke the temporary access
+      - name: Revoke Access to Security Group
+        run: |
+          echo "Revoking temporary access from the security group..."
+          IP=$(cat runner_ip.txt)
+          aws ec2 revoke-security-group-ingress \
+            --group-id sg-0abcd1234efgh5678 \
+            --protocol tcp \
+            --port 22 \
+            --cidr ${IP}/32 || true
+          echo "Access revoked successfully."
