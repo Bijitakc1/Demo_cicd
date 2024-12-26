@@ -17,13 +17,6 @@ jobs:
       - name: Install SSH client
         run: sudo apt-get update -y && sudo apt-get install openssh-client -y
 
-      # Log the runner's public IP address
-      - name: Get Runner Public IP Address
-        run: |
-          echo "Fetching the runner's public IP address..."
-          IP=$(curl -s https://checkip.amazonaws.com)
-          echo "Public IP Address of the Runner: $IP"
-
       # Configure AWS CLI credentials
       - name: Configure AWS CLI
         run: |
@@ -63,5 +56,5 @@ jobs:
             --group-id ${{ secrets.SG_ID }} \
             --protocol tcp \
             --port 22 \
-            --cidr ${IP}/32 || true
+            --cidr $(curl -s https://checkip.amazonaws.com)/32 
           echo "Access revoked successfully."
